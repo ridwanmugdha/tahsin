@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Your booking · Eterna</title>
+  <meta name="robots" content="noindex">
+  <meta name="theme-color" content="#F4EEE4">
+  <link rel="icon" href="assets/img/favicon.svg" type="image/svg+xml">
+  <script>document.documentElement.classList.add('js');</script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..600;1,9..144,300..600&amp;family=Inter+Tight:wght@400;500;600&amp;display=swap">
+  <link rel="stylesheet" href="assets/css/styles.css">
+  <link rel="stylesheet" href="assets/css/checkout.css">
+  <script src="assets/js/bag.js" defer></script>
+  <script src="assets/js/confirmation.js" defer></script>
+</head>
+<body class="page-checkout">
+
+<svg class="sprite" width="0" height="0" aria-hidden="true" focusable="false">
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12.5l4.2 4.2L19 7"/></symbol>
+  <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></symbol>
+  <symbol id="i-calendar" viewBox="0 0 24 24"><rect x="4" y="5.5" width="16" height="14.5" rx="1.5"/><path d="M4 10h16M8.5 3.5v4M15.5 3.5v4"/></symbol>
+  <symbol id="i-close" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></symbol>
+  <symbol id="i-lock" viewBox="0 0 24 24"><rect x="5" y="10.5" width="14" height="10" rx="1.5"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5M12 14.5v2"/></symbol>
+  <symbol id="i-back" viewBox="0 0 24 24"><path d="M19.5 12h-15M10.5 6l-6 6 6 6"/></symbol>
+  <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M4.5 12h15M13.5 6l6 6-6 6"/></symbol>
+  <symbol id="i-id" viewBox="0 0 24 24"><rect x="3" y="5.5" width="18" height="13" rx="1.5"/><circle cx="8.5" cy="11" r="2"/><path d="M5.5 15.5c.5-1.4 1.6-2.2 3-2.2s2.5.8 3 2.2M14 10h4M14 13.5h3"/></symbol>
+  <symbol id="i-shirt" viewBox="0 0 24 24"><path d="M9 3.5L4 6l1.6 4.2L7.5 9.6v10.9h9V9.6l1.9.6L20 6l-5-2.5c-.4 1.3-1.6 2.2-3 2.2s-2.6-.9-3-2.2z"/></symbol>
+  <symbol id="i-mail" viewBox="0 0 24 24"><rect x="3.5" y="5.5" width="17" height="13" rx="1.5"/><path d="M4 7l8 6 8-6"/></symbol>
+  <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 11v5M12 8h.01"/></symbol>
+</svg>
+
+<header class="site-header checkout-header">
+  <div class="container header-inner">
+    <!-- BRAND: replace "Eterna" with the final brand name -->
+    <a class="wordmark" href="./" aria-label="Eterna, back to the home page">
+      <svg class="wordmark-mark" viewBox="0 0 32 32" aria-hidden="true" focusable="false">
+        <path d="M5.5 29V15.5a10.5 10.5 0 0 1 21 0V29"/>
+        <path d="M11 29V16a5 5 0 0 1 10 0v13"/>
+        <path class="keystone" d="M14.6 2.6h2.8l-.5 3.2h-1.8z"/>
+        <path d="M3 29h26"/>
+      </svg>
+      <span class="wordmark-text">Eterna</span>
+    </a>
+    <p class="checkout-secure"><svg class="icon" aria-hidden="true"><use href="#i-lock"></use></svg>Secure booking</p>
+  </div>
+</header>
+
+<main id="main" class="checkout">
+  <div class="container">
+    <div class="cf" aria-live="polite" data-confirmation>
+      <!-- Filled in by confirmation.js -->
+      <div class="cf-card">
+        <span class="cf-seal cf-seal--pending" aria-hidden="true"><svg class="icon"><use href="#i-clock"></use></svg></span>
+        <h1 class="cf-title">Checking your booking…</h1>
+      </div>
+    </div>
+  </div>
+</main>
+
+<footer class="co-footer">
+  <div class="container">
+    <p class="co-footer-disclaimer">Eterna is an independent online reseller of tickets and guided experiences. We are not affiliated with, endorsed by, or acting on behalf of the Holy See, the Governorate of Vatican City State, the Vatican Museums, the Fabbrica di San Pietro or the Parco archeologico del Colosseo. Entry to St. Peter’s Basilica is free.</p>
+    <p class="co-footer-bottom">© 2026 Eterna · <a href="#">Terms</a> · <a href="#">Privacy</a> · <a href="#">Cancellation policy</a></p>
+  </div>
+</footer>
+
+</body>
+</html>

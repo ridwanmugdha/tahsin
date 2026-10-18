@@ -1,0 +1,250 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Checkout · Eterna</title>
+  <meta name="robots" content="noindex">
+  <meta name="theme-color" content="#F4EEE4">
+  <link rel="icon" href="assets/img/favicon.svg" type="image/svg+xml">
+  <script>document.documentElement.classList.add('js');</script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preconnect" href="https://images.unsplash.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..600;1,9..144,300..600&amp;family=Inter+Tight:wght@400;500;600&amp;display=swap">
+  <link rel="stylesheet" href="assets/css/styles.css">
+  <link rel="stylesheet" href="assets/css/checkout.css">
+  <script src="assets/js/bag.js" defer></script>
+  <script src="assets/js/checkout.js" defer></script>
+</head>
+<body class="page-checkout">
+
+<svg class="sprite" width="0" height="0" aria-hidden="true" focusable="false">
+  <symbol id="i-arch" viewBox="0 0 24 24"><path d="M4.5 20.5V10.5a7.5 7.5 0 0 1 15 0v10"/><path d="M8.5 20.5v-9a3.5 3.5 0 0 1 7 0v9"/><path d="M2.5 20.5h19"/></symbol>
+  <symbol id="i-close" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></symbol>
+  <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M4.5 12h15M13.5 6l6 6-6 6"/></symbol>
+  <symbol id="i-back" viewBox="0 0 24 24"><path d="M19.5 12h-15M10.5 6l-6 6 6 6"/></symbol>
+  <symbol id="i-chevron" viewBox="0 0 24 24"><path d="M6.5 9.5l5.5 5.5 5.5-5.5"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12.5l4.2 4.2L19 7"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+  <symbol id="i-minus" viewBox="0 0 24 24"><path d="M5 12h14"/></symbol>
+  <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></symbol>
+  <symbol id="i-calendar" viewBox="0 0 24 24"><rect x="4" y="5.5" width="16" height="14.5" rx="1.5"/><path d="M4 10h16M8.5 3.5v4M15.5 3.5v4"/></symbol>
+  <symbol id="i-phone" viewBox="0 0 24 24"><rect x="7" y="3" width="10" height="18" rx="2"/><path d="M11 17.5h2"/></symbol>
+  <symbol id="i-undo" viewBox="0 0 24 24"><path d="M4.5 9.5H15a4.75 4.75 0 0 1 0 9.5H8.5"/><path d="M8.5 5.5l-4 4 4 4"/></symbol>
+  <symbol id="i-lock" viewBox="0 0 24 24"><rect x="5" y="10.5" width="14" height="10" rx="1.5"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5M12 14.5v2"/></symbol>
+  <symbol id="i-globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M3.5 12h17M12 3.5c2.3 2.4 3.5 5.2 3.5 8.5s-1.2 6.1-3.5 8.5c-2.3-2.4-3.5-5.2-3.5-8.5S9.7 5.9 12 3.5z"/></symbol>
+  <symbol id="i-headset" viewBox="0 0 24 24"><path d="M4.5 14v-2a7.5 7.5 0 0 1 15 0v2"/><rect x="3.5" y="13.5" width="4" height="6" rx="1.2"/><rect x="16.5" y="13.5" width="4" height="6" rx="1.2"/><path d="M18.5 19.5c0 1.2-1.6 2-4 2H13"/></symbol>
+  <symbol id="i-id" viewBox="0 0 24 24"><rect x="3" y="5.5" width="18" height="13" rx="1.5"/><circle cx="8.5" cy="11" r="2"/><path d="M5.5 15.5c.5-1.4 1.6-2.2 3-2.2s2.5.8 3 2.2M14 10h4M14 13.5h3"/></symbol>
+  <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 11v5M12 8h.01"/></symbol>
+  <symbol id="i-ticket" viewBox="0 0 24 24"><path d="M3.5 7.5A1.5 1.5 0 0 1 5 6h14a1.5 1.5 0 0 1 1.5 1.5V10a2 2 0 0 0 0 4v2.5A1.5 1.5 0 0 1 19 18H5a1.5 1.5 0 0 1-1.5-1.5V14a2 2 0 0 0 0-4z"/><path d="M14.5 6.5v1.5M14.5 11.25v1.5M14.5 16v1.5"/></symbol>
+  <symbol id="i-mail" viewBox="0 0 24 24"><rect x="3.5" y="5.5" width="17" height="13" rx="1.5"/><path d="M4 7l8 6 8-6"/></symbol>
+  <symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="8.5" r="3.5"/><path d="M5 20c.8-3.6 3.6-5.5 7-5.5s6.2 1.9 7 5.5"/></symbol>
+  <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 3.5l7 2.6v5.4c0 4.4-2.9 7.7-7 9-4.1-1.3-7-4.6-7-9V6.1l7-2.6z"/><path d="M9 12l2 2 4-4"/></symbol>
+</svg>
+
+<a class="skip-link" href="#main">Skip to content</a>
+
+<header class="site-header checkout-header">
+  <div class="container header-inner">
+    <!-- BRAND: replace "Eterna" with the final brand name -->
+    <a class="wordmark" href="./" aria-label="Eterna, back to the home page">
+      <svg class="wordmark-mark" viewBox="0 0 32 32" aria-hidden="true" focusable="false">
+        <path d="M5.5 29V15.5a10.5 10.5 0 0 1 21 0V29"/>
+        <path d="M11 29V16a5 5 0 0 1 10 0v13"/>
+        <path class="keystone" d="M14.6 2.6h2.8l-.5 3.2h-1.8z"/>
+        <path d="M3 29h26"/>
+      </svg>
+      <span class="wordmark-text">Eterna</span>
+    </a>
+    <p class="checkout-secure"><svg class="icon" aria-hidden="true"><use href="#i-lock"></use></svg>Secure checkout</p>
+    <a class="checkout-back" href="./#tickets"><svg class="icon" aria-hidden="true"><use href="#i-back"></use></svg><span>Back to tickets</span></a>
+  </div>
+</header>
+
+<main id="main" class="checkout">
+  <div class="container">
+
+    <div class="co-intro">
+      <p class="kicker"><span class="kicker-rule" aria-hidden="true"></span>Checkout</p>
+      <h1 class="co-title">Your Roman <em>itinerary</em>.</h1>
+      <p class="co-lede">Choose your times, tell us who’s coming and pay securely. Tickets and meeting points arrive by email.</p>
+      <p class="co-banner co-banner--test" data-test-banner hidden><svg class="icon" aria-hidden="true"><use href="#i-info"></use></svg><span>Test mode: no real payment is taken. Add your Stripe or SumUp keys to go live.</span></p>
+      <p class="co-banner" data-cancelled hidden><svg class="icon" aria-hidden="true"><use href="#i-undo"></use></svg><span>Payment cancelled. Nothing was charged and your bag is still here.</span></p>
+    </div>
+
+    <!-- Shown instead of the form when something stops checkout (empty bag, server offline, booking closed) -->
+    <div class="co-state" data-state hidden>
+      <span class="co-state-icon" aria-hidden="true"><svg class="icon"><use href="#i-arch"></use></svg></span>
+      <h2 class="co-state-title" data-state-title></h2>
+      <p class="co-state-text" data-state-text></p>
+      <a class="btn btn-primary" href="./#tickets" data-state-action>Browse tickets <svg class="icon icon-arrow" aria-hidden="true"><use href="#i-arrow"></use></svg></a>
+    </div>
+
+    <div class="co-grid" data-checkout-grid hidden>
+      <form class="co-form" data-checkout novalidate>
+
+        <!-- I. Your visit -->
+        <section class="co-step" aria-labelledby="step-visit">
+          <header class="co-step-head">
+            <span class="co-num" aria-hidden="true">I</span>
+            <div>
+              <h2 class="co-step-title" id="step-visit">Your visit</h2>
+              <p class="co-step-text">Pick a date and time for each experience.</p>
+            </div>
+          </header>
+          <div class="co-items" data-items></div>
+        </section>
+
+        <!-- II. Lead traveller -->
+        <section class="co-step" aria-labelledby="step-lead">
+          <header class="co-step-head">
+            <span class="co-num" aria-hidden="true">II</span>
+            <div>
+              <h2 class="co-step-title" id="step-lead">Lead traveller</h2>
+              <p class="co-step-text">Tickets, meeting points and any changes are sent here.</p>
+            </div>
+          </header>
+          <div class="co-fields">
+            <div class="field">
+              <label class="field-label" for="c-first">First name</label>
+              <div class="control control--text"><input id="c-first" name="firstName" autocomplete="given-name" required></div>
+              <p class="field-error" data-err="customer.firstName" hidden></p>
+            </div>
+            <div class="field">
+              <label class="field-label" for="c-last">Last name</label>
+              <div class="control control--text"><input id="c-last" name="lastName" autocomplete="family-name" required></div>
+              <p class="field-error" data-err="customer.lastName" hidden></p>
+            </div>
+            <div class="field field--wide">
+              <label class="field-label" for="c-email">Email</label>
+              <div class="control control--text control--icon">
+                <svg class="icon control-icon" aria-hidden="true"><use href="#i-mail"></use></svg>
+                <input id="c-email" name="email" type="email" autocomplete="email" inputmode="email" required>
+              </div>
+              <p class="field-error" data-err="customer.email" hidden></p>
+            </div>
+            <div class="field">
+              <label class="field-label" for="c-phone">Mobile number</label>
+              <div class="control control--text control--icon">
+                <svg class="icon control-icon" aria-hidden="true"><use href="#i-phone"></use></svg>
+                <input id="c-phone" name="phone" type="tel" autocomplete="tel" inputmode="tel" placeholder="+44 7700 900123" required>
+              </div>
+              <p class="field-hint">For urgent changes on the day, such as a closure.</p>
+              <p class="field-error" data-err="customer.phone" hidden></p>
+            </div>
+            <div class="field">
+              <label class="field-label" for="c-country">Country</label>
+              <div class="control control--text control--icon">
+                <svg class="icon control-icon" aria-hidden="true"><use href="#i-globe"></use></svg>
+                <select id="c-country" name="country" autocomplete="country-name" required>
+                  <option value="">Choose…</option>
+                  <option>Argentina</option><option>Australia</option><option>Austria</option><option>Bangladesh</option>
+                  <option>Belgium</option><option>Brazil</option><option>Canada</option><option>Chile</option>
+                  <option>China</option><option>Colombia</option><option>Czechia</option><option>Denmark</option>
+                  <option>Egypt</option><option>Finland</option><option>France</option><option>Germany</option>
+                  <option>Greece</option><option>Hungary</option><option>India</option><option>Indonesia</option>
+                  <option>Ireland</option><option>Israel</option><option>Italy</option><option>Japan</option>
+                  <option>Malaysia</option><option>Mexico</option><option>Netherlands</option><option>New Zealand</option>
+                  <option>Nigeria</option><option>Norway</option><option>Pakistan</option><option>Philippines</option>
+                  <option>Poland</option><option>Portugal</option><option>Romania</option><option>Saudi Arabia</option>
+                  <option>Singapore</option><option>South Africa</option><option>South Korea</option><option>Spain</option>
+                  <option>Sweden</option><option>Switzerland</option><option>Turkey</option><option>United Arab Emirates</option>
+                  <option>United Kingdom</option><option>United States</option><option>Other</option>
+                </select>
+                <svg class="icon control-chevron" aria-hidden="true"><use href="#i-chevron"></use></svg>
+              </div>
+              <p class="field-error" data-err="customer.country" hidden></p>
+            </div>
+          </div>
+        </section>
+
+        <!-- III. Visitor names (only for named tickets) -->
+        <section class="co-step" aria-labelledby="step-names" data-names-step hidden>
+          <header class="co-step-head">
+            <span class="co-num" aria-hidden="true">III</span>
+            <div>
+              <h2 class="co-step-title" id="step-names">Visitor names</h2>
+              <p class="co-step-text">The Colosseum and the Vatican Museums print each visitor’s name on the ticket. Enter names exactly as on their passport or ID; they’re checked at the entrance.</p>
+            </div>
+          </header>
+          <div class="co-names" data-names></div>
+        </section>
+
+        <!-- IV. Payment -->
+        <section class="co-step co-step--pay" aria-labelledby="step-pay">
+          <header class="co-step-head">
+            <span class="co-num" aria-hidden="true" data-pay-num>IV</span>
+            <div>
+              <h2 class="co-step-title" id="step-pay">Payment</h2>
+              <p class="co-step-text" data-provider-note>Card details are entered on a secure payment page. We never see or store them.</p>
+            </div>
+          </header>
+
+          <label class="co-check">
+            <input type="checkbox" name="acceptTerms" required>
+            <span class="co-check-box" aria-hidden="true"><svg class="icon"><use href="#i-check"></use></svg></span>
+            <span>I accept the <a href="#">booking terms</a> and the cancellation policy shown for each experience.</span>
+          </label>
+          <p class="field-error" data-err="acceptTerms" hidden></p>
+          <label class="co-check">
+            <input type="checkbox" name="marketingOptIn">
+            <span class="co-check-box" aria-hidden="true"><svg class="icon"><use href="#i-check"></use></svg></span>
+            <span>Send me the occasional letter from Rome: opening-hour changes and quieter time slots. Optional.</span>
+          </label>
+
+          <div class="co-alert" role="alert" data-form-error hidden></div>
+
+          <button class="btn btn-primary btn-lg btn-block co-pay" type="submit" data-pay>
+            <svg class="icon" aria-hidden="true"><use href="#i-lock"></use></svg>
+            <span data-pay-label>Continue to payment</span>
+          </button>
+
+          <!-- SumUp card form or the test-mode panel appears here -->
+          <div class="co-payment" data-payment hidden>
+            <div class="co-payment-head">
+              <p class="co-payment-title" data-payment-title>Card details</p>
+              <button class="co-edit" type="button" data-payment-cancel>Edit booking</button>
+            </div>
+            <div id="sumup-card" data-sumup></div>
+            <div class="co-demo" data-demo hidden>
+              <p><strong>Test payment.</strong> No card is needed and no money moves. This only appears until Stripe or SumUp keys are added.</p>
+              <button class="btn btn-primary btn-lg btn-block" type="button" data-demo-pay>Complete test payment</button>
+            </div>
+            <p class="co-payment-msg" role="status" data-payment-msg></p>
+          </div>
+
+          <ul class="pay-chips co-chips" aria-label="Accepted payment methods">
+            <li>Visa</li><li>Mastercard</li><li>Amex</li><li>Apple Pay</li><li>Google Pay</li>
+          </ul>
+        </section>
+      </form>
+
+      <aside class="co-summary" aria-labelledby="summary-title">
+        <div class="co-summary-card">
+          <h2 class="co-summary-title" id="summary-title">Order summary</h2>
+          <ul class="co-lines" data-lines></ul>
+          <p class="co-total"><span>Total</span><strong data-total>€0</strong></p>
+          <p class="co-total-note">All fees included. You pay in euros.</p>
+          <ul class="co-assure">
+            <li><svg class="icon" aria-hidden="true"><use href="#i-undo"></use></svg>Free cancellation on most experiences, as shown on each one</li>
+            <li><svg class="icon" aria-hidden="true"><use href="#i-ticket"></use></svg>Mobile tickets by email, nothing to print</li>
+            <li><svg class="icon" aria-hidden="true"><use href="#i-headset"></use></svg>Help day and night: <a href="mailto:hello@eterna-example.com">hello@eterna-example.com</a></li>
+          </ul>
+        </div>
+      </aside>
+    </div>
+  </div>
+</main>
+
+<footer class="co-footer">
+  <div class="container">
+    <p class="co-footer-disclaimer">Eterna is an independent online reseller of tickets and guided experiences. We are not affiliated with, endorsed by, or acting on behalf of the Holy See, the Governorate of Vatican City State, the Vatican Museums, the Fabbrica di San Pietro or the Parco archeologico del Colosseo. Entry to St. Peter’s Basilica is free.</p>
+    <p class="co-footer-bottom">© 2026 Eterna · <a href="#">Terms</a> · <a href="#">Privacy</a> · <a href="#">Cancellation policy</a></p>
+  </div>
+</footer>
+
+<div class="toast-region" role="status" aria-live="polite" aria-atomic="true" data-toast-region></div>
+
+</body>
+</html>
