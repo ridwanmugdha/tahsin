@@ -48,6 +48,10 @@ Tip: under **Settings → Customer emails** Stripe can email customers a receipt
 4. The card form appears right on the checkout page (SumUp Payment Widget). SumUp's payment notifications reach the server automatically once the site runs on `https://` with `PUBLIC_URL` set.
 5. Apple Pay / Google Pay through SumUp need extra setup with SumUp (domain registration in the dashboard and a request to their support).
 
+## Preview on GitHub Pages
+
+Every push to `main` that changes `public/` publishes the website to https://ridwanmugdha.github.io/tahsin/ (`.github/workflows/pages.yml`; in the repo's **Settings → Pages**, Source must be **GitHub Actions**). Pages only hosts files, so the landing page and bag work there but checkout shows "Online booking isn't live here yet". For real bookings, run the Node server on a host such as Render, Railway or Fly.io.
+
 ## 4. See your bookings
 
 Set `ADMIN_PASSWORD` in `.env`, then open `/admin` (any username + that password). It lists every booking with status, customer, dates, times and visitor names. **Tickets are not bought or emailed automatically**: for each paid booking, buy the venue tickets / arrange the guide and email the customer their vouchers.

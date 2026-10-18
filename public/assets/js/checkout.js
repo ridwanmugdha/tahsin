@@ -754,6 +754,11 @@
     }
     try {
       const [configRes, catalogRes] = await Promise.all([fetch('/api/config'), fetch('/api/catalog')]);
+      // 404 = the site is hosted without its server (e.g. a GitHub Pages preview).
+      if (configRes.status === 404) {
+        showState('Online booking isn’t live here yet', 'This is a preview of the website. To book now, write to hello@eterna-example.com and we’ll arrange your visit.', { label: 'Back to home', href: './' });
+        return;
+      }
       if (!configRes.ok || !catalogRes.ok) throw new Error();
       config = await configRes.json();
       const catalog = await catalogRes.json();
