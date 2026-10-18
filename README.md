@@ -60,7 +60,7 @@ Set `ADMIN_PASSWORD` in `.env`, then open `/admin` (any username + that password
 
 - [ ] Set real prices, and especially **child prices** (they are placeholders) in `server/catalog.js`.
 - [ ] Match the **time slots** in `server/catalog.js` to what your suppliers can deliver.
-- [ ] Replace the brand name "Eterna" (search for `BRAND:` in the HTML) and the placeholder email/phone.
+- [ ] Replace the brand name "Eterna" (search for `BRAND:` in the HTML).
 - [ ] Replace the **sample reviews** on the landing page with real ones.
 - [ ] Write real **Terms, Privacy and Cancellation** pages (the links are placeholders now).
 - [ ] Keep "Licensed local guides" only if every guide holds a valid licence.

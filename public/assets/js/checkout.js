@@ -756,7 +756,7 @@
       const [configRes, catalogRes] = await Promise.all([fetch('/api/config'), fetch('/api/catalog')]);
       // 404 = the site is hosted without its server (e.g. a GitHub Pages preview).
       if (configRes.status === 404) {
-        showState('Online booking isn’t live here yet', 'This is a preview of the website. To book now, write to hello@eterna-example.com and we’ll arrange your visit.', { label: 'Back to home', href: './' });
+        showState('Online booking isn’t live here yet', 'This is a preview of the website. To book now, write to sayedtahsinhossain@gmail.com and we’ll arrange your visit.', { label: 'Back to home', href: './' });
         return;
       }
       if (!configRes.ok || !catalogRes.ok) throw new Error();
@@ -774,7 +774,7 @@
     bag.items().forEach((item) => { if (!products[item.productId]) bag.remove(item.key); });
 
     if (!config.ready) {
-      showState('Online booking opens soon', 'Write to hello@eterna-example.com and we’ll book your visit for you.', { label: 'Back to home', href: './' });
+      showState('Online booking opens soon', 'Write to sayedtahsinhossain@gmail.com and we’ll book your visit for you.', { label: 'Back to home', href: './' });
       return;
     }
     if (config.testMode) $('[data-test-banner]').hidden = false;

@@ -92,7 +92,7 @@
     if (!id || !token) {
       renderMessage({
         seal: 'cf-seal--failed', sealIcon: 'info', title: 'We can’t find that booking',
-        text: 'This link is missing its booking details. If you paid, check your email or contact us at hello@eterna-example.com.',
+        text: 'This link is missing its booking details. If you paid, check your email or contact us at sayedtahsinhossain@gmail.com.',
         actions: `<a class="btn btn-primary" href="./">Back to Eterna</a>`,
       });
       return;
@@ -111,7 +111,7 @@
     if (!order) {
       renderMessage({
         seal: 'cf-seal--failed', sealIcon: 'info', title: 'We can’t find that booking',
-        text: 'Please contact us at hello@eterna-example.com with your email address and we’ll look it up.',
+        text: 'Please contact us at sayedtahsinhossain@gmail.com with your email address and we’ll look it up.',
         actions: `<a class="btn btn-primary" href="./">Back to Eterna</a>`,
       });
       return;
