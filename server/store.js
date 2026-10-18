@@ -1,40 +1,23 @@
 /* ==========================================================================
-   Order storage: one JSON file (data/orders.json).
-   Fine for a launch with modest volume. Writes are queued so two requests
-   never overwrite each other, and each write is atomic (temp file + rename).
-   For larger volume, swap these functions for a real database.
+   Order storage. Picks where bookings are kept:
+     DATABASE_URL set  -> Postgres (needed on Vercel, whose disk is temporary)
+     otherwise         -> one JSON file, data/orders.json (or DATA_DIR)
    ========================================================================== */
 import { randomBytes, randomUUID } from 'node:crypto';
-import { mkdir, readFile, rename, writeFile } from 'node:fs/promises';
 import path from 'node:path';
+import { fileBackend } from './store-file.js';
+import { connectPostgres, postgresBackend } from './store-postgres.js';
 
-const DATA_DIR = process.env.DATA_DIR || path.resolve('data');
-const FILE = path.join(DATA_DIR, 'orders.json');
+const DATABASE_URL = process.env.DATABASE_URL || process.env.POSTGRES_URL;
+const backend = DATABASE_URL
+  ? postgresBackend(connectPostgres(DATABASE_URL))
+  : fileBackend(process.env.DATA_DIR || path.resolve('data'));
 
-let orders = null;
-let queue = Promise.resolve();
-
-async function load() {
-  if (orders) return orders;
-  try {
-    orders = JSON.parse(await readFile(FILE, 'utf8'));
-  } catch (error) {
-    if (error.code !== 'ENOENT') throw error;
-    orders = [];
-  }
-  return orders;
-}
-
-function persist() {
-  const snapshot = JSON.stringify(orders, null, 2);
-  queue = queue.then(async () => {
-    await mkdir(DATA_DIR, { recursive: true });
-    const tmp = `${FILE}.${process.pid}.tmp`;
-    await writeFile(tmp, snapshot);
-    await rename(tmp, FILE);
-  });
-  return queue;
-}
+export const storeName = backend.name;
+// Vercel can't keep files, so without a database bookings would be lost.
+export const storeProblem = process.env.VERCEL && !DATABASE_URL
+  ? 'DATABASE_URL is not set. Add a Postgres database (Vercel -> Storage) to take bookings.'
+  : null;
 
 // Readable booking reference without look-alike characters (no 0/O, 1/I).
 function makeRef() {
@@ -44,7 +27,6 @@ function makeRef() {
 }
 
 export async function createOrder(draft) {
-  await load();
   const now = new Date().toISOString();
   const order = {
     id: randomUUID(),
@@ -56,31 +38,16 @@ export async function createOrder(draft) {
     updatedAt: now,
     ...draft,
   };
-  orders.push(order);
-  await persist();
+  await backend.insert(order);
   return order;
 }
 
-export async function getOrder(id) {
-  await load();
-  return orders.find((o) => o.id === id) || null;
-}
+export const getOrder = (id) => backend.get(id);
 
-export async function findOrder(predicate) {
-  await load();
-  return orders.find(predicate) || null;
-}
+export const findOrderByPayment = (reference) => backend.findByPayment(reference);
 
-export async function updateOrder(id, patch) {
-  await load();
-  const order = orders.find((o) => o.id === id);
-  if (!order) return null;
-  Object.assign(order, patch, { updatedAt: new Date().toISOString() });
-  await persist();
-  return order;
-}
+/** Merges `patch` into the order. With { ifStatus }, only if the order still has that status (else null). */
+export const updateOrder = (id, patch, options) => backend.update(id, { ...patch, updatedAt: new Date().toISOString() }, options);
 
-export async function listOrders() {
-  await load();
-  return [...orders].reverse();
-}
+/** Newest first. */
+export const listOrders = () => backend.list();

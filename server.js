@@ -1,19 +1,22 @@
 /* ==========================================================================
    Eterna server: serves the website (public/) and the checkout API.
    Start with `npm start`. Settings come from .env (see .env.example).
+   On Vercel this file is the whole backend (one function); public/ is
+   served by Vercel's CDN.
    ========================================================================== */
 import express from 'express';
 import path from 'node:path';
-import { buildDraft } from './booking.js';
-import { publicCatalog } from './catalog.js';
-import { adminAuth, renderAdmin } from './admin.js';
-import { selectProvider } from './payments/index.js';
-import { createOrder, findOrder, getOrder, listOrders, updateOrder } from './store.js';
+import { buildDraft } from './server/booking.js';
+import { publicCatalog } from './server/catalog.js';
+import { adminAuth, renderAdmin } from './server/admin.js';
+import { selectProvider } from './server/payments/index.js';
+import { createOrder, findOrderByPayment, getOrder, listOrders, storeName, storeProblem, updateOrder } from './server/store.js';
 
 const PORT = Number(process.env.PORT) || 3000;
 const BRAND = process.env.BRAND_NAME || 'Eterna';
 const IS_PROD = process.env.NODE_ENV === 'production';
-const provider = selectProvider({ env: process.env, isProd: IS_PROD, brand: BRAND });
+if (storeProblem) console.error(`[store] ${storeProblem} Online booking is switched off.`);
+const provider = storeProblem ? null : selectProvider({ env: process.env, isProd: IS_PROD, brand: BRAND });
 
 const app = express();
 app.disable('x-powered-by');
@@ -44,7 +47,10 @@ async function applyStatus(order, status) {
     console.log(`[order] ${order.ref} paid (${order.payment?.provider})`);
     return updateOrder(order.id, { status: 'paid', paidAt: new Date().toISOString() });
   }
-  if (['failed', 'expired'].includes(status) && order.status === 'pending') return updateOrder(order.id, { status });
+  if (['failed', 'expired'].includes(status) && order.status === 'pending') {
+    // Only while still pending: the webhook and the confirmation page can update the same order at once.
+    return (await updateOrder(order.id, { status }, { ifStatus: 'pending' })) || getOrder(order.id);
+  }
   return order;
 }
 
@@ -95,7 +101,7 @@ app.post('/api/webhooks/stripe', express.raw({ type: 'application/json', limit: 
     return res.status(400).send('Invalid signature');
   }
   if (result) {
-    const order = await findOrder((o) => o.payment?.reference === result.reference);
+    const order = await findOrderByPayment(result.reference);
     await applyStatus(order, result.status);
   }
   res.json({ received: true });
@@ -105,7 +111,7 @@ app.post('/api/webhooks/sumup', express.json({ limit: '64kb' }), async (req, res
   if (provider?.name !== 'sumup') return res.status(404).end();
   const checkoutId = req.body?.id;
   if (typeof checkoutId === 'string') {
-    const order = await findOrder((o) => o.payment?.reference === checkoutId);
+    const order = await findOrderByPayment(checkoutId);
     // SumUp webhooks are not signed, so we never trust the body: ask SumUp for the real status.
     if (order && order.status === 'pending') await applyStatus(order, await provider.verify(order));
   }
@@ -178,9 +184,11 @@ app.get('/admin', adminAuth(process.env.ADMIN_PASSWORD), async (req, res) => {
 /* --------------------------------------------------------------------------
    Website
    -------------------------------------------------------------------------- */
+// Locally (and on hosts that run the server directly). On Vercel the CDN serves public/ before requests get here.
 app.use(express.static(path.resolve('public'), { extensions: ['html'], maxAge: IS_PROD ? '1h' : 0 }));
 app.use('/api', (req, res) => res.status(404).json({ error: 'Not found.' }));
-app.use((req, res) => res.status(404).sendFile(path.resolve('public/index.html')));
+// Unknown page: show the home page. If the file isn't there (Vercel's function may not include public/), redirect home.
+app.use((req, res) => res.status(404).sendFile(path.resolve('public/index.html'), (error) => error && res.redirect('/')));
 
 app.use((error, req, res, next) => {
   console.error('[server]', error);
@@ -190,5 +198,5 @@ app.use((error, req, res, next) => {
 
 app.listen(PORT, () => {
   const mode = provider ? `${provider.label}${provider.testMode ? ' (test keys)' : ''}` : 'payments OFF (no keys set)';
-  console.log(`${BRAND} running at http://localhost:${PORT} · payments: ${mode}`);
+  console.log(`${BRAND} running at http://localhost:${PORT} · payments: ${mode} · bookings: ${storeName}`);
 });

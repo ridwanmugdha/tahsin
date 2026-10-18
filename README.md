@@ -4,12 +4,15 @@ Landing page, bag, checkout and booking confirmation for Colosseum, Vatican Muse
 
 ```
 public/            the website (landing page, checkout.html, confirmation.html, assets)
-server/            the small Node.js server
+server.js          the small Node.js server (also what Vercel runs)
+server/
   catalog.js       ← prices, child rates, time slots, closed days (edit this)
   booking.js       checks and prices every order
   payments/        stripe.js, sumup.js, demo.js (test mode)
+  store.js         where bookings are kept: Postgres if DATABASE_URL is set, else data/orders.json
   admin.js         the /admin bookings list
-data/orders.json   bookings (created automatically, not uploaded to git)
+data/orders.json   bookings when there is no database (created automatically, not uploaded to git)
+vercel.json        Vercel settings (Frankfurt region, security headers)
 .env.example       settings template
 ```
 
@@ -48,9 +51,39 @@ Tip: under **Settings → Customer emails** Stripe can email customers a receipt
 4. The card form appears right on the checkout page (SumUp Payment Widget). SumUp's payment notifications reach the server automatically once the site runs on `https://` with `PUBLIC_URL` set.
 5. Apple Pay / Google Pay through SumUp need extra setup with SumUp (domain registration in the dashboard and a request to their support).
 
+## Host it online (Vercel)
+
+Real bookings need the server running on an `https://` address. On [Vercel](https://vercel.com), `server.js` runs as one serverless function, the `public/` folder is served by Vercel's CDN, and bookings go into a **Neon Postgres** database. Vercel can't keep files between requests, so `data/orders.json` doesn't work there. Your keys are never in the repo: you type them into Vercel.
+
+Vercel's free **Hobby** plan is for personal, non-commercial use. It's fine for testing; move the project to **Pro** before taking real customers' money.
+
+1. Sign in at https://vercel.com with GitHub. Click **Add New → Project** and import `ridwanmugdha/tahsin`. Vercel detects **Express**; leave the build settings as they are.
+2. Before clicking **Deploy**, open **Environment Variables** and add:
+   - `NODE_ENV` = `production`
+   - `TRUST_PROXY` = `1`
+   - `PAYMENT_PROVIDER` = `stripe`
+   - `STRIPE_SECRET_KEY` = your `sk_test_…` key for now
+   - `ADMIN_PASSWORD` = a long password for `/admin`
+
+   Click **Deploy**. When it's done, note the address under **Domains** (e.g. `https://tahsin.vercel.app`). Use that one, not the long per-deployment address: those can ask for a Vercel login, and Stripe can't get past it. Checkout says "Online booking opens soon" until the database is connected (step 3).
+3. **Database**: in the project open **Storage → Create Database → Neon** (Postgres), pick the free plan and the **Frankfurt** region (next to the `fra1` functions in `vercel.json`), and connect it to the project. Leave the environment variable prefix empty, so it adds `DATABASE_URL`. The bookings table is created by itself on the first booking.
+4. Under **Settings → Environment Variables**, add `PUBLIC_URL` = the address from step 2 (no slash at the end).
+5. **Stripe webhook**: in the Stripe Dashboard go to **Developers → Webhooks → Add destination**, endpoint URL `https://YOUR-ADDRESS/api/webhooks/stripe`, events `checkout.session.completed`, `checkout.session.async_payment_succeeded`, `checkout.session.async_payment_failed` and `checkout.session.expired`. Copy its signing secret (`whsec_…`) into `STRIPE_WEBHOOK_SECRET` on Vercel.
+6. Environment variable changes only apply to new deployments: open **Deployments**, click **⋯** on the latest one and choose **Redeploy**.
+7. **Test it**: book something on the live address and pay with `4242 4242 4242 4242`, any future date, any CVC. You should end on the confirmation page with the booking paid, see it in `/admin`, and see the event delivered with status `200` under the webhook in Stripe.
+
+Good to know:
+
+- Every push to `main` deploys the site; pushes to other branches get their own preview address.
+- To look at or copy the bookings, open the database from Vercel's **Storage** tab and run `SELECT data FROM orders ORDER BY created_at DESC` in Neon's SQL editor.
+- **Going live**: Stripe's test and live modes have separate keys and separate webhooks. Create the webhook again in live mode, put `sk_live_…` and the live `whsec_…` into Vercel, and redeploy.
+- **Own domain** (e.g. `www.eterna-tickets.com`): add it under **Settings → Domains** and set the DNS records Vercel shows. Then change `PUBLIC_URL` and the Stripe webhook URL to the new address.
+- **SumUp instead of Stripe**: set `PAYMENT_PROVIDER=sumup`, `SUMUP_API_KEY` and `SUMUP_MERCHANT_CODE` instead.
+- Other hosts (Render, Railway, Fly.io, a VPS) work too: run `npm ci` and `npm start` with the same settings, and either set `DATABASE_URL` or put `DATA_DIR` on a persistent disk.
+
 ## Preview on GitHub Pages
 
-Every push to `main` that changes `public/` publishes the website to https://ridwanmugdha.github.io/tahsin/ (`.github/workflows/pages.yml`; in the repo's **Settings → Pages**, Source must be **GitHub Actions**). Pages only hosts files, so the landing page and bag work there but checkout shows "Online booking isn't live here yet". For real bookings, run the Node server on a host such as Render, Railway or Fly.io.
+Every push to `main` that changes `public/` publishes the website to https://ridwanmugdha.github.io/tahsin/ (`.github/workflows/pages.yml`; in the repo's **Settings → Pages**, Source must be **GitHub Actions**). Pages only hosts files, so the landing page and bag work there but checkout shows "Online booking isn't live here yet". Real bookings go through the Node server (see "Host it online" above).
 
 ## 4. See your bookings
 
@@ -64,7 +97,7 @@ Set `ADMIN_PASSWORD` in `.env`, then open `/admin` (any username + that password
 - [ ] Replace the **sample reviews** on the landing page with real ones.
 - [ ] Write real **Terms, Privacy and Cancellation** pages (the links are placeholders now).
 - [ ] Keep "Licensed local guides" only if every guide holds a valid licence.
-- [ ] Host on a service that runs Node.js with a **persistent disk** for `data/` (e.g. Render, Railway, Fly.io, a VPS) and back up `data/orders.json`. For bigger volumes, move orders into a database (`server/store.js`).
+- [ ] Host it with a database for the bookings (Vercel + Neon, see "Host it online" above), or on a Node host with a **persistent disk** for `data/orders.json` (and back that file up).
 - [ ] On the live server set `NODE_ENV=production`, `PUBLIC_URL=https://…`, `TRUST_PROXY=1` (if behind a proxy) and your live keys.
 - [ ] Photos are loaded from Unsplash (free licence). Consider downloading them into `public/assets/img/`.
 
