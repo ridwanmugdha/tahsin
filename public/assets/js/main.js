@@ -206,14 +206,23 @@
   // Names come from the page itself, so the drawer works even before prices load.
   const productNames = Object.fromEntries($$('[data-product-id]').map((b) => [b.dataset.productId, b.dataset.product]));
   let catalog = null;
-  fetch('/api/catalog')
-    .then((response) => (response.ok ? response.json() : null))
-    .then((data) => {
+  let days = {}; // per-date prices set by the business
+  Promise.all([
+    fetch('/api/catalog').then((response) => (response.ok ? response.json() : null)),
+    fetch('/api/availability').then((response) => (response.ok ? response.json() : null)).catch(() => null),
+  ])
+    .then(([data, availability]) => {
       if (!data) return;
       catalog = Object.fromEntries(data.products.map((p) => [p.id, p]));
+      days = availability?.days || {};
       if (drawerOpen) renderDrawer();
     })
     .catch(() => { /* opened without the server: prices are shown at checkout */ });
+
+  function linePrice(product, item) {
+    const info = (!product.parts && item.date && days[product.id]?.[item.date]) || {};
+    return item.adults * (info.adult ?? product.adult) + item.children * (info.child ?? product.child);
+  }
 
   const euro = (cents) => new Intl.NumberFormat('en-IE', {
     style: 'currency', currency: 'EUR', minimumFractionDigits: cents % 100 ? 2 : 0,
@@ -248,7 +257,7 @@
     let priced = Boolean(catalog);
     drawerList.replaceChildren(...items.map((item) => {
       const product = catalog?.[item.productId];
-      const line = product ? item.adults * product.adult + item.children * product.child : null;
+      const line = product ? linePrice(product, item) : null;
       if (line === null) priced = false;
       else total += line;
 

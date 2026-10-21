@@ -1,5 +1,6 @@
 /* ==========================================================================
-   Validates a checkout request and prices it from the catalogue.
+   Validates a checkout request and prices it from the catalogue and the
+   per-date prices and ticket limits set in /admin (see availability.js).
    Returns { errors } (keyed by field path, for the form) or { draft }.
    ========================================================================== */
 import { ATTRACTIONS, BOOKING_RULES, CURRENCY, getProduct } from './catalog.js';
@@ -24,7 +25,7 @@ export function romeNow(now = new Date()) {
 
 const minutesOf = (time) => Number(time.slice(0, 2)) * 60 + Number(time.slice(3, 5));
 
-function addDays(iso, days) {
+export function addDays(iso, days) {
   const d = new Date(`${iso}T12:00:00Z`);
   d.setUTCDate(d.getUTCDate() + days);
   return d.toISOString().slice(0, 10);
@@ -35,8 +36,14 @@ function isRealDate(iso) {
   return !Number.isNaN(d.getTime()) && d.toISOString().slice(0, 10) === iso;
 }
 
-/** Why a product can't run on this date/time, or '' if it can. */
-export function availabilityProblem(product, date, time, now = romeNow()) {
+/** A real calendar date written as YYYY-MM-DD. */
+export const isIsoDate = (value) => typeof value === 'string' && DATE_RE.test(value) && isRealDate(value);
+
+/** First and last date that can be booked today. */
+export const bookableRange = (now = romeNow()) => ({ from: now.date, to: addDays(now.date, BOOKING_RULES.maxDaysAhead) });
+
+/** Why a product can't run on this date/time, or '' if it can. `day` is the admin's settings for that date. */
+export function availabilityProblem(product, date, time, now = romeNow(), day = null) {
   if (!DATE_RE.test(date || '') || !isRealDate(date)) return 'Choose a date.';
   if (!TIME_RE.test(time || '') || !product.slots.includes(time)) return 'Choose a time.';
   if (date < now.date) return 'That date has passed.';
@@ -49,20 +56,33 @@ export function availabilityProblem(product, date, time, now = romeNow()) {
   if (venue.closedWeekdays.includes(weekday) || venue.closedDates.includes(date.slice(5))) {
     return `${venue.name} is closed on that date.`;
   }
+  if (day?.closed || day?.left === 0) return 'No tickets left on that date. Please choose another.';
   return '';
 }
 
-export function priceItem(product, adults, children) {
-  return adults * product.adult + children * product.child;
+/** Prices per person (cents) on a day: the admin's price for that date, else the catalogue's. Combos keep theirs. */
+export function pricesOn(product, day) {
+  if (product.parts || !day) return { adult: product.adult, child: product.child };
+  return { adult: day.adult ?? product.adult, child: day.child ?? product.child };
 }
 
 /**
  * Turns the browser's checkout request into a priced order draft.
  * Nothing from the request is trusted except the choices themselves.
+ * `calendar` comes from loadCalendar() and covers bookableRange(now).
  */
-export function buildDraft(body, now = romeNow()) {
+export function buildDraft(body, calendar, now = romeNow()) {
   const errors = {};
   const fail = (path, message) => { if (!errors[path]) errors[path] = message; };
+
+  // Tickets asked for per product and date, across the whole order, to check against what's left.
+  const requests = new Map();
+  const request = (day, guests, path) => {
+    const entry = requests.get(`${day.productId}|${day.date}`) || { day, guests: 0, paths: [] };
+    entry.guests += guests;
+    entry.paths.push(path);
+    requests.set(`${day.productId}|${day.date}`, entry);
+  };
 
   const rawItems = Array.isArray(body?.items) ? body.items : [];
   if (!rawItems.length) fail('items', 'Your bag is empty.');
@@ -85,28 +105,35 @@ export function buildDraft(body, now = romeNow()) {
       attraction: product.attraction,
       adults: adults || 0,
       children: children || 0,
-      unitAdult: product.adult,
-      unitChild: product.child,
-      lineTotal: priceItem(product, adults || 0, children || 0),
       cancellation: product.cancellation,
     };
 
+    let day = null;
     if (product.parts) {
       const rawParts = Array.isArray(raw.parts) ? raw.parts : [];
       item.parts = product.parts.map((partId, p) => {
         const part = getProduct(partId);
         const date = clean(rawParts[p]?.date, 10);
         const time = clean(rawParts[p]?.time, 5);
-        const problem = availabilityProblem(part, date, time, now);
+        const partDay = calendar.day(part.id, date);
+        const problem = availabilityProblem(part, date, time, now, partDay);
         if (problem) fail(`items.${i}.parts.${p}`, problem);
+        else request(partDay, guestCount, `items.${i}.parts.${p}`);
         return { productId: part.id, name: part.name, date, time };
       });
     } else {
       item.date = clean(raw.date, 10);
       item.time = clean(raw.time, 5);
-      const problem = availabilityProblem(product, item.date, item.time, now);
+      day = calendar.day(product.id, item.date);
+      const problem = availabilityProblem(product, item.date, item.time, now, day);
       if (problem) fail(`items.${i}.when`, problem);
+      else request(day, guestCount, `items.${i}.when`);
     }
+
+    const price = pricesOn(product, day);
+    item.unitAdult = price.adult;
+    item.unitChild = price.child;
+    item.lineTotal = item.adults * price.adult + item.children * price.child;
 
     if (product.namedTickets) {
       const names = Array.isArray(raw.guests) ? raw.guests : [];
@@ -118,6 +145,12 @@ export function buildDraft(body, now = romeNow()) {
     }
     return item;
   }).filter(Boolean);
+
+  for (const { day, guests, paths } of requests.values()) {
+    if (day.left === null || guests <= day.left) continue;
+    const message = `Only ${day.left} ${day.left === 1 ? 'ticket' : 'tickets'} left on that date. Choose fewer guests or another date.`;
+    paths.forEach((path) => fail(path, message));
+  }
 
   const c = body?.customer || {};
   const customer = {

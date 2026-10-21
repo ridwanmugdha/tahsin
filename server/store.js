@@ -1,7 +1,7 @@
 /* ==========================================================================
-   Order storage. Picks where bookings are kept:
+   Storage. Picks where bookings, ticket availability and admin logins are kept:
      DATABASE_URL set  -> Postgres (needed on Vercel, whose disk is temporary)
-     otherwise         -> one JSON file, data/orders.json (or DATA_DIR)
+     otherwise         -> JSON files in data/ (or DATA_DIR)
    ========================================================================== */
 import { randomBytes, randomUUID } from 'node:crypto';
 import path from 'node:path';
@@ -51,3 +51,22 @@ export const updateOrder = (id, patch, options) => backend.update(id, { ...patch
 
 /** Newest first. */
 export const listOrders = () => backend.list();
+
+/** [{ productId, date, sold }]: guests booked per product and day (YYYY-MM-DD, inclusive range). */
+export const ticketsSold = (from, to, holdSince) => backend.ticketsSold(from, to, holdSince);
+
+/** [{ productId, date, closed, capacity, adult, child }]: the admin's per-date settings. */
+export const listDays = (from, to, productId) => backend.listDays(from, to, productId);
+
+/** Saves whole rows (same shape as listDays), replacing any existing row for that product and date. */
+export const putDays = (rows) => backend.putDays(rows);
+
+export const deleteDays = (productId, dates) => backend.deleteDays(productId, dates);
+
+/** { username, passwordHash } or null. */
+export const getAdmin = (username) => backend.getAdmin(username);
+
+export const saveAdmin = (admin) => backend.saveAdmin(admin);
+
+/** Closes the database connection (for scripts, so they can exit). */
+export const closeStore = () => backend.close();

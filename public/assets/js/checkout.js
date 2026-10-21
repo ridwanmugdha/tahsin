@@ -32,6 +32,7 @@
   let rules = null;
   let products = {};
   let attractions = {};
+  let days = {}; // per-date prices, closed days and tickets left, set by the business in /admin
   let busy = false;
   let pending = null; // { id, token } of the order waiting for payment
   let sumupCard = null;
@@ -47,9 +48,17 @@
     weekday: 'short', day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC',
   });
   const guestsText = (item) => [plural(item.adults, 'adult', 'adults'), item.children ? plural(item.children, 'child', 'children') : ''].filter(Boolean).join(' · ');
+  const dayInfo = (productId, date) => (date && days[productId]?.[date]) || {};
+  // Price per person on the chosen date (combos keep their own price). The server has the final say.
+  const unitPrices = (product, date) => {
+    const info = product.parts ? {} : dayInfo(product.id, date);
+    return { adult: info.adult ?? product.adult, child: info.child ?? product.child };
+  };
   const lineTotal = (item) => {
     const product = products[item.productId];
-    return product ? item.adults * product.adult + item.children * product.child : 0;
+    if (!product) return 0;
+    const price = unitPrices(product, item.date);
+    return item.adults * price.adult + item.children * price.child;
   };
   let uid = 0;
   const nextId = (prefix) => `${prefix}-${++uid}`;
@@ -101,16 +110,20 @@
     const weekday = new Date(`${date}T12:00:00Z`).getUTCDay();
     if (venue.closedWeekdays.includes(weekday)) return `${venue.name} is closed on ${new Date(`${date}T12:00:00Z`).toLocaleDateString('en-GB', { weekday: 'long', timeZone: 'UTC' })}s.`;
     if (venue.closedDates.includes(date.slice(5))) return `${venue.name} is closed on that date.`;
+    const info = dayInfo(product.id, date);
+    if (info.closed || info.left === 0) return 'No tickets left on that date. Please choose another.';
     if (product.slots.every((slot) => slotTooSoon(date, slot, now))) return 'No times left on that day. Please choose another date.';
     return '';
   }
 
-  function whenProblem(product, date, time) {
+  function whenProblem(product, date, time, guests) {
     if (!date) return 'Choose a date.';
     const problem = dateProblem(product, date);
     if (problem) return problem;
     if (!time) return 'Choose a time.';
     if (slotTooSoon(date, time, romeNow())) return `That time is too soon. Book at least ${rules.cutoffHours} hours ahead.`;
+    const { left } = dayInfo(product.id, date);
+    if (left !== undefined && guests > left) return `Only ${plural(left, 'ticket', 'tickets')} left on that date. Choose fewer guests or another date.`;
     return '';
   }
 
@@ -224,7 +237,8 @@
     const id = nextId('guests');
     const text = el('label', 'co-guest-label', label);
     text.htmlFor = id;
-    text.append(el('small', '', hint));
+    const hintEl = el('small', '', hint);
+    text.append(hintEl);
     const control = el('div', 'stepper-control');
     const minus = el('button');
     minus.type = 'button';
@@ -257,6 +271,7 @@
     control.append(minus, input, plus);
     wrap.append(text, control);
     wrap.sync = () => sync(input.value);
+    wrap.setHint = (next) => { hintEl.textContent = next; };
     return wrap;
   }
 
@@ -335,7 +350,7 @@
       }));
     }
 
-    // Guests
+    // Guests (prices per person follow the chosen date)
     const guests = el('div', 'co-guests');
     const adults = stepper({
       label: 'Adults',
@@ -360,10 +375,17 @@
     body.append(guests, guestErr);
 
     function guestsChanged() {
-      price.textContent = euro(lineTotal(current()));
       renderNames();
       refreshTotals();
     }
+
+    // Called by refreshTotals whenever guests or the date change.
+    card.refresh = () => {
+      const unit = unitPrices(product, current().date);
+      price.textContent = euro(lineTotal(current()));
+      adults.setHint(`${euro(unit.adult)} each`);
+      children.setHint(`${euro(unit.child)} each, under 18`);
+    };
 
     const note = venue ? venue.note : 'Each experience has its own date. Visitor names are needed for the Colosseum and the Vatican.';
     const noteEl = el('p', 'co-item-note');
@@ -484,6 +506,7 @@
     }));
     totalEl.textContent = euro(total);
     payLabel.textContent = `Continue to payment · ${euro(total)}`;
+    $$('.co-item', itemsEl).forEach((card) => card.refresh?.());
   }
 
   function renderAll() {
@@ -530,14 +553,15 @@
     const errors = {};
     payload.items.forEach((item, i) => {
       const product = products[item.productId];
+      const guests = item.adults + item.children;
       if (product.parts) {
         product.parts.forEach((partId, p) => {
           const part = item.parts?.[p] || {};
-          const problem = whenProblem(products[partId], part.date, part.time);
+          const problem = whenProblem(products[partId], part.date, part.time, guests);
           if (problem) errors[`items.${i}.parts.${p}`] = problem;
         });
       } else {
-        const problem = whenProblem(product, item.date, item.time);
+        const problem = whenProblem(product, item.date, item.time, guests);
         if (problem) errors[`items.${i}.when`] = problem;
       }
       if (product.namedTickets) {
@@ -753,7 +777,9 @@
       return;
     }
     try {
-      const [configRes, catalogRes] = await Promise.all([fetch('/api/config'), fetch('/api/catalog')]);
+      const [configRes, catalogRes, daysRes] = await Promise.all([
+        fetch('/api/config'), fetch('/api/catalog'), fetch('/api/availability').catch(() => null),
+      ]);
       // 404 = the site is hosted without its server (e.g. a GitHub Pages preview).
       if (configRes.status === 404) {
         showState('Online booking isn’t live here yet', 'This is a preview of the website. To book now, write to sayedtahsinhossain@gmail.com and we’ll arrange your visit.', { label: 'Back to home', href: './' });
@@ -765,6 +791,7 @@
       rules = catalog.rules;
       attractions = catalog.attractions;
       products = Object.fromEntries(catalog.products.map((p) => [p.id, p]));
+      if (daysRes?.ok) days = (await daysRes.json()).days || {};
     } catch {
       showState('Checkout is unavailable', 'We couldn’t reach our booking system. Please try again in a moment.', { label: 'Back to home', href: './' });
       return;

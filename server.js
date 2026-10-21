@@ -6,11 +6,13 @@
    ========================================================================== */
 import express from 'express';
 import path from 'node:path';
-import { buildDraft } from './server/booking.js';
+import { loadCalendar, publicDays } from './server/availability.js';
+import { bookableRange, buildDraft, romeNow } from './server/booking.js';
 import { publicCatalog } from './server/catalog.js';
-import { adminAuth, renderAdmin } from './server/admin.js';
+import { adminRouter } from './server/admin/index.js';
 import { selectProvider } from './server/payments/index.js';
-import { createOrder, findOrderByPayment, getOrder, listOrders, storeName, storeProblem, updateOrder } from './server/store.js';
+import { rateLimit } from './server/rate-limit.js';
+import { createOrder, findOrderByPayment, getOrder, storeName, storeProblem, updateOrder } from './server/store.js';
 
 const PORT = Number(process.env.PORT) || 3000;
 const BRAND = process.env.BRAND_NAME || 'Eterna';
@@ -76,18 +78,6 @@ async function orderFromRequest(req, res) {
   return order;
 }
 
-// Tiny in-memory rate limit for creating orders (per IP).
-const hits = new Map();
-function rateLimit(limit, windowMs) {
-  return (req, res, next) => {
-    const now = Date.now();
-    const entry = hits.get(req.ip);
-    if (!entry || entry.reset < now) hits.set(req.ip, { count: 1, reset: now + windowMs });
-    else if (++entry.count > limit) return res.status(429).json({ error: 'Too many attempts. Please wait a few minutes and try again.' });
-    next();
-  };
-}
-
 /* --------------------------------------------------------------------------
    Webhooks (registered before express.json: Stripe needs the raw body)
    -------------------------------------------------------------------------- */
@@ -135,10 +125,18 @@ app.get('/api/config', (req, res) => {
 
 app.get('/api/catalog', (req, res) => res.json(publicCatalog()));
 
+// Per-date prices, closed days and tickets left (only dates the admin has set up).
+app.get('/api/availability', async (req, res) => {
+  const { from, to } = bookableRange(romeNow());
+  res.set('Cache-Control', 'no-store').json({ days: storeProblem ? {} : publicDays(await loadCalendar(from, to)) });
+});
+
 app.post('/api/orders', rateLimit(20, 10 * 60 * 1000), async (req, res) => {
   if (!provider) return res.status(503).json({ error: 'Online booking is not open yet. Please contact us to book.' });
 
-  const { errors, draft } = buildDraft(req.body);
+  const now = romeNow();
+  const { from, to } = bookableRange(now);
+  const { errors, draft } = buildDraft(req.body, await loadCalendar(from, to), now);
   if (errors) return res.status(422).json({ error: 'Please check the highlighted details.', fields: errors });
 
   let order = await createOrder({ ...draft, payment: { provider: provider.name } });
@@ -175,11 +173,9 @@ app.post('/api/orders/:id/pay-demo', async (req, res) => {
 });
 
 /* --------------------------------------------------------------------------
-   Orders overview for the business (password protected via ADMIN_PASSWORD)
+   Admin panel for the business: bookings, availability and prices per date
    -------------------------------------------------------------------------- */
-app.get('/admin', adminAuth(process.env.ADMIN_PASSWORD), async (req, res) => {
-  res.type('html').send(renderAdmin(await listOrders(), BRAND));
-});
+app.use('/admin', adminRouter({ brand: BRAND }));
 
 /* --------------------------------------------------------------------------
    Website
